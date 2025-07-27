@@ -22,6 +22,7 @@ type AppAction =
   | { type: 'LOGIN_MANAGER'; payload: Manager }
   | { type: 'LOGIN_ADMIN'; payload: Admin }
   | { type: 'LOGOUT' }
+  | { type: 'ADD_STUDENT'; payload: Student }
   | { type: 'ADD_TOKEN'; payload: Token }
   | { type: 'ADD_DINING_MONTH'; payload: DiningMonth }
   | { type: 'ADD_CANCELLED_DAY'; payload: CancelledDay }
@@ -150,6 +151,7 @@ const initialState: AppState = {
   diningMonths: [
     {
       id: 'dm-1',
+      name: 'January 2025',
       startDate: '2025-01-01',
       endDate: '2025-01-30',
       isActive: true,
@@ -209,6 +211,12 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
         currentAdmin: null,
         userRole: null,
         isAuthenticated: false
+      };
+    
+    case 'ADD_STUDENT':
+      return {
+        ...state,
+        students: [...state.students, action.payload]
       };
     
     case 'ADD_TOKEN':

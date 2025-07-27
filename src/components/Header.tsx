@@ -14,7 +14,6 @@ const Header: React.FC<HeaderProps> = ({ onViewChange, currentView }) => {
   const navItems = state.userRole === 'manager' 
     ? [
         { id: 'dashboard', label: 'Dashboard' },
-        { id: 'dining-month', label: 'Dining Month' },
         { id: 'cancellation-approval', label: 'Cancellations' },
         { id: 'students-database', label: 'Students' }
       ]

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Search, Edit, Save, X, Phone, Mail, MapPin, BookOpen, User } from 'lucide-react';
+import { Users, Search, Edit, Save, X, Phone, Mail, MapPin, BookOpen, User, Plus } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { Student } from '../types';
 
@@ -8,6 +8,20 @@ const StudentsDatabase: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [editForm, setEditForm] = useState<Partial<Student>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newStudentForm, setNewStudentForm] = useState<Partial<Student>>({
+    name: '',
+    email: '',
+    password: '',
+    hallId: 'HALL-001',
+    registrationNumber: '',
+    studentId: '',
+    department: '',
+    roomNumber: '',
+    phoneNumber: '',
+    profilePhoto: '',
+    balance: 0
+  });
 
   const filteredStudents = state.students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,6 +55,41 @@ const StudentsDatabase: React.FC = () => {
     setEditForm({});
   };
 
+  const handleAddStudent = () => {
+    if (!newStudentForm.name || !newStudentForm.email || !newStudentForm.studentId) return;
+
+    const newStudent: Student = {
+      id: `student-${Date.now()}`,
+      name: newStudentForm.name!,
+      email: newStudentForm.email!,
+      password: newStudentForm.password || 'student123',
+      hallId: newStudentForm.hallId || 'HALL-001',
+      registrationNumber: newStudentForm.registrationNumber!,
+      studentId: newStudentForm.studentId!,
+      department: newStudentForm.department!,
+      roomNumber: newStudentForm.roomNumber!,
+      phoneNumber: newStudentForm.phoneNumber!,
+      profilePhoto: newStudentForm.profilePhoto || '',
+      balance: newStudentForm.balance || 0
+    };
+
+    dispatch({ type: 'ADD_STUDENT', payload: newStudent });
+    setShowAddForm(false);
+    setNewStudentForm({
+      name: '',
+      email: '',
+      password: '',
+      hallId: 'HALL-001',
+      registrationNumber: '',
+      studentId: '',
+      department: '',
+      roomNumber: '',
+      phoneNumber: '',
+      profilePhoto: '',
+      balance: 0
+    });
+  };
+
   const canEdit = state.userRole === 'admin';
 
   return (
@@ -72,6 +121,16 @@ const StudentsDatabase: React.FC = () => {
             <div className="text-sm text-gray-600">
               {filteredStudents.length} of {state.students.length} students
             </div>
+            
+            {canEdit && (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Student
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -267,6 +326,151 @@ const StudentsDatabase: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCancelEdit}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Modal */}
+      {showAddForm && canEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Add New Student</h3>
+                <button
+                  onClick={() => setShowAddForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    value={newStudentForm.name || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Student ID *</label>
+                  <input
+                    type="text"
+                    value={newStudentForm.studentId || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, studentId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                  <input
+                    type="email"
+                    value={newStudentForm.email || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <input
+                    type="password"
+                    value={newStudentForm.password || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, password: e.target.value })}
+                    placeholder="Default: student123"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={newStudentForm.phoneNumber || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, phoneNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                  <input
+                    type="text"
+                    value={newStudentForm.department || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, department: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
+                  <input
+                    type="text"
+                    value={newStudentForm.roomNumber || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, roomNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Number</label>
+                  <input
+                    type="text"
+                    value={newStudentForm.registrationNumber || ''}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, registrationNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Initial Balance (৳)</label>
+                  <input
+                    type="number"
+                    value={newStudentForm.balance || 0}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, balance: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo URL</label>
+                <input
+                  type="url"
+                  value={newStudentForm.profilePhoto || ''}
+                  onChange={(e) => setNewStudentForm({ ...newStudentForm, profilePhoto: e.target.value })}
+                  placeholder="Enter image URL (optional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleAddStudent}
+                  disabled={!newStudentForm.name || !newStudentForm.email || !newStudentForm.studentId}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Student
+                </button>
+                <button
+                  onClick={() => setShowAddForm(false)}
                   className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors duration-200"
                 >
                   Cancel

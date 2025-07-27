@@ -5,12 +5,13 @@ import { useApp } from '../contexts/AppContext';
 const ManagerAssignment: React.FC = () => {
   const { state, dispatch } = useApp();
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [selectedDiningMonth, setSelectedDiningMonth] = useState<string>('');
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState(false);
 
-  const activeDiningMonth = state.diningMonths.find(dm => dm.isActive);
-  const currentManagers = activeDiningMonth ? 
-    state.managers.filter(m => m.diningMonthId === activeDiningMonth.id) : [];
+  const selectedDiningMonthData = state.diningMonths.find(dm => dm.id === selectedDiningMonth);
+  const currentManagers = selectedDiningMonthData ? 
+    state.managers.filter(m => m.diningMonthId === selectedDiningMonthData.id) : [];
 
   const availableStudents = state.students.filter(student => 
     !currentManagers.some(manager => manager.studentId === student.id)
@@ -28,7 +29,7 @@ const ManagerAssignment: React.FC = () => {
   };
 
   const handleAssignManagers = async () => {
-    if (!activeDiningMonth || selectedStudents.length !== 2) return;
+    if (!selectedDiningMonth || selectedStudents.length !== 2) return;
 
     setIsAssigning(true);
 
@@ -36,7 +37,7 @@ const ManagerAssignment: React.FC = () => {
       dispatch({
         type: 'ASSIGN_MANAGERS',
         payload: {
-          diningMonthId: activeDiningMonth.id,
+          diningMonthId: selectedDiningMonth,
           managerIds: selectedStudents
         }
       });
@@ -49,12 +50,12 @@ const ManagerAssignment: React.FC = () => {
     }, 1500);
   };
 
-  if (!activeDiningMonth) {
+  if (state.diningMonths.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
           <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Active Dining Month</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Dining Months Available</h2>
           <p className="text-gray-600">Create a dining month first to assign managers.</p>
         </div>
       </div>
@@ -121,14 +122,65 @@ const ManagerAssignment: React.FC = () => {
         </div>
       )}
 
+      {/* Dining Month Selection */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Select Dining Month</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Choose which dining month to assign managers for
+          </p>
+        </div>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dining Month
+              </label>
+              <select
+                value={selectedDiningMonth}
+                onChange={(e) => {
+                  setSelectedDiningMonth(e.target.value);
+                  setSelectedStudents([]); // Reset selected students when changing dining month
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select a dining month...</option>
+                {state.diningMonths.map((month) => (
+                  <option key={month.id} value={month.id}>
+                    {month.name} ({formatDate(month.startDate)} - {formatDate(month.endDate)})
+                    {month.isActive ? ' - Active' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {selectedDiningMonthData && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-800">{selectedDiningMonthData.name}</p>
+                <p className="text-xs text-blue-600">
+                  {formatDate(selectedDiningMonthData.startDate)} - {formatDate(selectedDiningMonthData.endDate)}
+                </p>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${
+                  selectedDiningMonthData.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {selectedDiningMonthData.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Student Selection */}
+      {selectedDiningMonth && (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
             {currentManagers.length > 0 ? 'Reassign Managers' : 'Select New Managers'}
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Choose exactly 2 students to serve as managers for this dining month
+            Choose exactly 2 students to serve as managers for {selectedDiningMonthData?.name}
           </p>
         </div>
         
@@ -216,9 +268,9 @@ const ManagerAssignment: React.FC = () => {
 
           <button
             onClick={handleAssignManagers}
-            disabled={selectedStudents.length !== 2 || isAssigning}
+            disabled={selectedStudents.length !== 2 || isAssigning || !selectedDiningMonth}
             className={`w-full mt-6 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-              selectedStudents.length === 2 && !isAssigning
+              selectedStudents.length === 2 && !isAssigning && selectedDiningMonth
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
@@ -237,6 +289,7 @@ const ManagerAssignment: React.FC = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* Instructions */}
       <div className="bg-gray-50 rounded-xl p-6">

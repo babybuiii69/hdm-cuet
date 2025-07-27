@@ -5,7 +5,9 @@ import { formatDate, addDays, getDiningDayNumber } from '../utils/dateUtils';
 
 const DiningMonthManager: React.FC = () => {
   const { state, dispatch } = useApp();
+  const [monthName, setMonthName] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
 
@@ -13,19 +15,18 @@ const DiningMonthManager: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
 
   const handleCreateDiningMonth = async () => {
-    if (!startDate || !state.currentManager) return;
+    if (!monthName || !startDate || !endDate || state.userRole !== 'admin') return;
 
     setIsCreating(true);
 
     setTimeout(() => {
-      const endDate = addDays(new Date(startDate), 29); // 30 days total (0-29)
-      
       const newDiningMonth = {
         id: `dm-${Date.now()}`,
+        name: monthName,
         startDate,
-        endDate: endDate.toISOString().split('T')[0],
+        endDate,
         isActive: true,
-        createdBy: state.currentManager!.id,
+        createdBy: state.currentAdmin!.id,
         createdAt: new Date().toISOString()
       };
 
@@ -33,7 +34,9 @@ const DiningMonthManager: React.FC = () => {
       
       setIsCreating(false);
       setCreateSuccess(true);
+      setMonthName('');
       setStartDate('');
+      setEndDate('');
       
       setTimeout(() => setCreateSuccess(false), 3000);
     }, 1500);
@@ -48,6 +51,19 @@ const DiningMonthManager: React.FC = () => {
     if (!activeDiningMonth) return null;
     return getDiningDayNumber(date, activeDiningMonth.startDate);
   };
+
+  // Only allow admin to create dining months
+  if (state.userRole !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Restricted</h2>
+          <p className="text-gray-600">Only Hall Admin can create and manage dining months.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -91,14 +107,27 @@ const DiningMonthManager: React.FC = () => {
             Create New Dining Month
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Deploy a new 30-day dining period for students
+            Create a new dining period for students
           </p>
         </div>
 
         <div className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Start Date
+              Month Name
+            </label>
+            <input
+              type="text"
+              value={monthName}
+              onChange={(e) => setMonthName(e.target.value)}
+              placeholder="e.g., January 2025, Spring Semester"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Month Starting Date
             </label>
             <input
               type="date"
@@ -107,14 +136,24 @@ const DiningMonthManager: React.FC = () => {
               min={today}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Month Ending Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || today}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
             
-            {startDate && (
+            {startDate && endDate && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>End Date:</strong> {formatDate(addDays(new Date(startDate), 29).toISOString().split('T')[0])}
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  This will create a 30-day dining period from Day 1 to Day 30
+                  <strong>Duration:</strong> {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
                 </p>
               </div>
             )}
@@ -136,9 +175,9 @@ const DiningMonthManager: React.FC = () => {
 
           <button
             onClick={handleCreateDiningMonth}
-            disabled={!startDate || isCreating}
+            disabled={!monthName || !startDate || !endDate || isCreating}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-              startDate && !isCreating
+              monthName && startDate && endDate && !isCreating
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
@@ -151,7 +190,7 @@ const DiningMonthManager: React.FC = () => {
             ) : (
               <div className="flex items-center justify-center">
                 <Calendar className="h-5 w-5 mr-2" />
-                Create 30-Day Dining Month
+                Create Dining Month
               </div>
             )}
           </button>
@@ -171,6 +210,10 @@ const DiningMonthManager: React.FC = () => {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
+                <p className="text-gray-600 font-medium">Month Name</p>
+                <p className="text-lg font-semibold text-gray-900">{activeDiningMonth.name}</p>
+              </div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Date
                 </label>
@@ -197,7 +240,7 @@ const DiningMonthManager: React.FC = () => {
                     Select a date
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -226,6 +269,9 @@ const DiningMonthManager: React.FC = () => {
                       }`}>
                         {month.isActive ? 'Active' : 'Completed'}
                       </span>
+                      <p className="font-medium text-gray-900">{month.name}</p>
+                    </div>
+                    <div className="flex items-center space-x-3 mt-1">
                       <p className="font-medium text-gray-900">
                         {formatDate(month.startDate)} - {formatDate(month.endDate)}
                       </p>
@@ -236,7 +282,9 @@ const DiningMonthManager: React.FC = () => {
                   </div>
                   
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">30 Days</p>
+                    <p className="text-sm text-gray-600">
+                      {Math.ceil((new Date(month.endDate).getTime() - new Date(month.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} Days
+                    </p>
                     {month.isActive && (
                       <p className="text-xs text-green-600 font-medium">
                         Day {getCurrentDayNumber()}
